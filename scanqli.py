@@ -12,20 +12,19 @@ import progressbar
 import json
 from operator import is_not
 from functools import partial
-import logo
+# import logo
 import numpy
 import os
-try:
-    import urlparse # Python2
-except ImportError:
-    import urllib.parse as urlparse # Python3
+import urllib.parse as urlparse  # Python3
 
 # Define parser
 examples_message = """\nExamples:
   python scanqli.py -u 'http://127.0.0.1/test/?p=news' -o output.log\n  python scanqli.py -u 'https://127.0.0.1/test/' -r -c '{"PHPSESSID":"4bn7uro8qq62ol4o667bejbqo3" , "Session":"Mzo6YWMwZGRmOWU2NWQ1N2I2YTU2YjI0NTMzODZjZDVkYjU="}'\n"""
-logo_message = logo.chooselogo()
+# logo_message = logo.chooselogo()
 
-parser = optparse.OptionParser(description=logo_message, usage = "python scanqli.py -u [url] [options]", epilog = examples_message, formatter=optparse_mooi.CompactHelpFormatter(align_long_opts=True, metavar_column=20))
+parser = optparse.OptionParser(usage="python scanqli.py -u [url] [options]",
+                               epilog=examples_message,
+                               formatter=optparse_mooi.CompactHelpFormatter(align_long_opts=True, metavar_column=20))
 groupscan = optparse.OptionGroup(parser, "Scanning")
 groupoutput = optparse.OptionGroup(parser, "Output")
 
@@ -65,14 +64,6 @@ else:
 
 # Check verbose args
 function.verbose = options.verbose
-
-# Check log file write perm
-if options.output:
-    if function.CheckFilePerm(options.output):
-        progressbar.logfile = options.output
-    else:
-        function.PrintError("-o " + options.output, "No write permission for output file")
-        exit(0)
 
 # Check Banned URLs
 if options.iurl:
@@ -118,7 +109,7 @@ config.init()
 # Start
 starttime = time.time()
 
-print(logo.chooselogo() + "\n")
+# print(logo.chooselogo() + "\n")
 try:
     if options.recursive:
         baseurl = []
@@ -130,10 +121,10 @@ try:
         pageset = function.GetAllPages(baseurl)
         print(str(len(pageset)) + " URLs founds")
     else:
-        pageset = {None:None}
+        pageset = {None: None}
         for uniturl in url:
             print("URL = " + uniturl)
-            pageset.update({uniturl:function.GetHTML(uniturl)})
+            pageset.update({uniturl: function.GetHTML(uniturl)})
         pageset.pop(None)
 
     print("----------------------------")
@@ -151,6 +142,16 @@ except IndexError:
     resultlen = 0
 
 if resultlen <= 1:
-    print(colored(str(resultlen) + " vulnerability ", attrs=["bold"])  + "found in " + str(round(time.time() - starttime, 2)) + " seconds!")
+    print(colored(str(resultlen) + " vulnerability ", attrs=["bold"]) + "found in " + str(
+        round(time.time() - starttime, 2)) + " seconds!")
 else:
-    print(colored(str(resultlen) + " vulnerabilities ", attrs=["bold"])  + "founds in " + str(round(time.time() - starttime, 2)) + " seconds!")
+    print(colored(str(resultlen) + " vulnerabilities ", attrs=["bold"]) + "founds in " + str(
+        round(time.time() - starttime, 2)) + " seconds!")
+
+print(result)
+data = result
+if data == {}:
+    data = {"Error": "Nothing found in ScalQli"}
+output_filename = options.output
+# Write "data" output here in "output_filename"
+function.CheckFilePerm(output_filename, data)
