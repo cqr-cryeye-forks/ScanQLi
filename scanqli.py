@@ -132,8 +132,14 @@ def main():
             data = {"URL": key}
             data_list.append(data)
         print(str(len(pageset)) + " URLs founds")
+        if pageset == {}:
+            data_list = {
+                  "Error": "Nothing found in ScanQli"
+                }
         if str(len(pageset)) == "0":
-            data_list = []
+            data_list = {
+                  "Error": "Nothing found in ScanQli"
+                }
         output_filename = options.output
 
         function.CheckFilePerm(output_filename, data_list)
