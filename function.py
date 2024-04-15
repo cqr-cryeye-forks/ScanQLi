@@ -109,8 +109,8 @@ def GetHTML(url):
 
     except requests.ConnectionError as error:
         PrintError("Connection Error", str(error))
-        exit(0)
-
+        # exit(0)
+        return None
     return r.text
 
 
@@ -201,12 +201,13 @@ def GetAllPages(urllist):
     newlinks = {None}
 
     for url in urllist:
-        html = GetHTML(url)
-        links.update({url: html})
-        templinks.update(GetLinks(url, html))
-        templinks.update(GetAllURLsParams(url))
-        linksfollowed.update(url)
-        newlinks.update(url)
+        html = GetHTML(url) or None
+        if html is not None:
+            links.update({url: html})
+            templinks.update(GetLinks(url, html))
+            templinks.update(GetAllURLsParams(url))
+            linksfollowed.update(url)
+            newlinks.update(url)
 
     links.pop(None)
     templinks.remove(None)
@@ -448,6 +449,10 @@ def CheckPageListAllVulns(pageset):
 
 
 def CheckFilePerm(filename, data):
+    if data == []:
+        data = {
+            "Error": "Nothing found in ScanQli"
+        }
     MAIN_DIR: Final[pathlib.Path] = pathlib.Path(__file__).parent
     output_json: str = MAIN_DIR / filename
     with open(output_json, "w") as jf:
