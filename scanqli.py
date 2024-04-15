@@ -43,6 +43,7 @@ parser.add_option_group(groupscan)
 parser.add_option_group(groupoutput)
 
 options, args = parser.parse_args()
+URL: str = options.url
 
 # Check requiered arg
 if not options.url and not options.urllist:
@@ -57,9 +58,11 @@ elif options.urllist:
     for infile in url:
         if not validators.url(infile):
             function.PrintError("-u " + infile, "Malformed URL. Please given a valid URL")
+            data = {}
             exit(0)
 else:
     function.PrintError("-u " + options.url, "Malformed URL. Please given a valid URL")
+    data = {}
     exit(0)
 
 # Check verbose args
@@ -72,20 +75,23 @@ if options.iurl:
             config.BannedURLs.append(bannedurl)
         else:
             function.PrintError("-i " + bannedurl, "Malformed URL. Please given a valid URL")
+            data = {}
             exit(0)
 
-if options.iurllist:
-    try:
-        filelist = open(options.iurllist, "r")
-        for iurl in filelist:
-            if validators.url(iurl):
-                config.BannedURLs.append(iurl.replace("\n", ""))
-            else:
-                function.PrintError("-I " + options.iurllist + " : " + iurl, "Malformed URL. Please given a valid URL")
-                exit(0)
-    except IOError:
-        function.PrintError("-I " + options.iurllist, "Unable to read the given file")
-        exit(0)
+# Do not use file
+#
+# if options.iurllist:
+#     try:
+#         filelist = open(options.iurllist, "r")
+#         for iurl in filelist:
+#             if validators.url(iurl):
+#                 config.BannedURLs.append(iurl.replace("\n", ""))
+#             else:
+#                 function.PrintError("-I " + options.iurllist + " : " + iurl, "Malformed URL. Please given a valid URL")
+#                 exit(0)
+#     except IOError:
+#         function.PrintError("-I " + options.iurllist, "Unable to read the given file")
+#         exit(0)
 
 # Cookies
 if options.cookies:
@@ -107,51 +113,60 @@ if options.quick:
 config.init()
 
 # Start
-starttime = time.time()
+# starttime = time.time()
 
 # print(logo.chooselogo() + "\n")
-try:
-    if options.recursive:
-        baseurl = []
-        for uniturl in url:
-            if uniturl[-1:] != "/" and os.path.splitext(urlparse.urlparse(uniturl).path)[1] == "":
-                uniturl = uniturl + "/"
-            baseurl.append(uniturl)
-            print("Base URL = " + uniturl)
-        pageset = function.GetAllPages(baseurl)
-        print(str(len(pageset)) + " URLs founds")
-    else:
-        pageset = {None: None}
-        for uniturl in url:
-            print("URL = " + uniturl)
-            pageset.update({uniturl: function.GetHTML(uniturl)})
-        pageset.pop(None)
+# try:
+if options.recursive:
+    baseurl = []
+    for uniturl in url:
+        if uniturl[-1:] != "/" and os.path.splitext(urlparse.urlparse(uniturl).path)[1] == "":
+            uniturl = uniturl + "/"
+        baseurl.append(uniturl)
+        print("Base URL = " + uniturl)
+    pageset = function.GetAllPages(baseurl)
+    data_list = []
+    for key, value in pageset.items():
+        data = {"URL": key}
+        data_list.append(data)
+    print(str(len(pageset)) + " URLs founds")
 
-    print("----------------------------")
-    function.vulnscanstrated = True
-    result = function.CheckPageListAllVulns(pageset)
+    output_filename = options.output
 
-except KeyboardInterrupt:
-    print("\nStopped after " + str(round(time.time() - starttime, 2)) + " seconds")
-    exit(0)
+    function.CheckFilePerm(output_filename, data_list)
 
-print("----------------------------")
-try:
-    resultlen = numpy.shape(result)[0] * numpy.shape(result)[1]
-except IndexError:
-    resultlen = 0
+#     else:
+#         pageset = {None: None}
+#         for uniturl in url:
+#             print("URL = " + uniturl)
+#             pageset.update({uniturl: function.GetHTML(uniturl)})
+#         pageset.pop(None)
+#
+#     print("----------------------------")
+#     function.vulnscanstrated = True
+#     result = function.CheckPageListAllVulns(pageset)
+#
+# except KeyboardInterrupt:
+#     print("\nStopped after " + str(round(time.time() - starttime, 2)) + " seconds")
+#     exit(0)
+#
+# print("----------------------------")
+# try:
+#     resultlen = numpy.shape(result)[0] * numpy.shape(result)[1]
+# except IndexError:
+#     resultlen = 0
+#
+# if resultlen <= 1:
+#     print(colored(str(resultlen) + " vulnerability ", attrs=["bold"]) + "found in " + str(
+#         round(time.time() - starttime, 2)) + " seconds!")
+# else:
+#     print(colored(str(resultlen) + " vulnerabilities ", attrs=["bold"]) + "founds in " + str(
+#         round(time.time() - starttime, 2)) + " seconds!")
 
-if resultlen <= 1:
-    print(colored(str(resultlen) + " vulnerability ", attrs=["bold"]) + "found in " + str(
-        round(time.time() - starttime, 2)) + " seconds!")
-else:
-    print(colored(str(resultlen) + " vulnerabilities ", attrs=["bold"]) + "founds in " + str(
-        round(time.time() - starttime, 2)) + " seconds!")
 
-print(result)
-data = result
-if data == {}:
-    data = {"Error": "Nothing found in ScalQli"}
-output_filename = options.output
-# Write "data" output here in "output_filename"
-function.CheckFilePerm(output_filename, data)
+# data = pageset
+# if data == {}:
+#     data = {"Error": "Nothing found in ScalQli"}
+# output_filename = options.output
+# # Write "data" output here in "output_filename"
+# function.CheckFilePerm(output_filename, data)

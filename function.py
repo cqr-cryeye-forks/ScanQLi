@@ -140,28 +140,37 @@ def PostData(url, data):
             return ""
 
     except requests.ConnectionError as error:
-        PrintError("Connection Error", str(error))
-        exit(0)
+        print("Connection Error")#, str(error))
+        # exit(0)
+# def GetParams(url):
+#     result = []
+#     i = 1
+#     buffer = 0
+#     while "?" not in url[:-buffer + 1][-i:] and "/" not in url[-i:]:
+#         if buffer == 0 and "&" in url[-i:]:
+#             result.append(url[-i + 1:])
+#             buffer += i + 1
+#             i = 1
+#         elif "&" in url[:-buffer][-i:]:
+#             result.append(url[:-buffer + 1][-i:])
+#             buffer += i + 1
+#             i = 0
+#         elif "?" in url[:-buffer][-i:]:
+#             result.append(url[:-buffer + 1][-i:])
+#             break
+#         i += 1
+#     result.reverse()
+#     return result
 
 
 def GetParams(url):
     result = []
-    i = 1
-    buffer = 0
-    while "?" not in url[:-buffer + 1][-i:] and "/" not in url[-i:]:
-        if buffer == 0 and "&" in url[-i:]:
-            result.append(url[-i + 1:])
-            buffer += i + 1
-            i = 1
-        elif "&" in url[:-buffer][-i:]:
-            result.append(url[:-buffer + 1][-i:])
-            buffer += i + 1
-            i = 0
-        elif "?" in url[:-buffer][-i:]:
-            result.append(url[:-buffer + 1][-i:])
-            break
-        i += 1
-    result.reverse()
+    print("Scanning URL:", url)
+    if "?" in url:
+        params_part = url.split("?")[1]
+        params = params_part.split("&")
+        for param in params:
+            result.append(param.split("=")[0])
     return result
 
 
@@ -185,70 +194,32 @@ def GetAllURLsParams(url):
     return ConcatURLParams(base, GetParams(url))
 
 
-# def GetAllPages(urllist):
-#     links = {None:None}
-#     templinks = {None}
-#     linksfollowed = {None}
-#     newlinks = {None}
-#
-#     for url in urllist:
-#         html = GetHTML(url)
-#         links.update({url:html})
-#         templinks.update(GetLinks(url, html))
-#         templinks.update(GetAllURLsParams(url))
-#         linksfollowed.update(url)
-#         newlinks.update(url)
-#
-#     links.pop(None)
-#     templinks.remove(None)
-#     linksfollowed.remove(None)
-#     newlinks.remove(None)
-#
-#     bar = progressbar.progressbar("count", "Get URLs")
-#     while templinks:
-#         bar.progress(len(templinks))
-#         for link in templinks:
-#             html = GetHTML(link)
-#             links.update({link:html})
-#             newlinks.update(GetLinks(link, html))
-#             newlinks.update(GetAllURLsParams(link))
-#             linksfollowed.update({link})
-#         templinks = newlinks.difference(linksfollowed)
-#     bar.delbar()
-#
-#     result = {}
-#     for link in links:
-#         if not CheckBlackListURLs(link):
-#             result.update({link:links[link]})
-#
-#     return result
-
 def GetAllPages(urllist):
-    links = {}
-    templinks = {}
-    linksfollowed = {}
-    newlinks = {}
+    links = {None:None}
+    templinks = {None}
+    linksfollowed = {None}
+    newlinks = {None}
 
     for url in urllist:
         html = GetHTML(url)
         links.update({url: html})
-        # templinks.update(GetLinks(url, html))
-        for l in (GetLinks(url, html)): templinks.update({"url": l})
-        # templinks.update(GetAllURLsParams(url))
-        for l in (GetAllURLsParams(url)): templinks.update({"url": l})
-        linksfollowed.update({"url": url})
-        newlinks.update({"url": url})
-        print("URL", url)
+        templinks.update(GetLinks(url, html))
+        templinks.update(GetAllURLsParams(url))
+        linksfollowed.update(url)
+        newlinks.update(url)
+
+    links.pop(None)
+    templinks.remove(None)
+    linksfollowed.remove(None)
+    newlinks.remove(None)
+
     bar = progressbar.progressbar("count", "Get URLs")
     while templinks:
         bar.progress(len(templinks))
         for link in templinks:
-            try:
-                html = GetHTML(link)
-                links.update({link: html})
-                for l in (GetLinks(link, html)): newlinks.update({"link": l})
-            except Exception as e:
-                pass
+            html = GetHTML(link)
+            links.update({link: html})
+            newlinks.update(GetLinks(link, html))
             newlinks.update(GetAllURLsParams(link))
             linksfollowed.update({link})
         templinks = newlinks.difference(linksfollowed)
@@ -257,9 +228,47 @@ def GetAllPages(urllist):
     result = {}
     for link in links:
         if not CheckBlackListURLs(link):
-            result.update({link: links[link]})
-    print("RESULT", result)
+            result.update({link:links[link]})
+
     return result
+
+# def GetAllPages(urllist):
+#     links = {}
+#     templinks = {}
+#     linksfollowed = {}
+#     newlinks = {}
+#
+#     for url in urllist:
+#         html = GetHTML(url)
+#         links.update({url: html})
+#         # templinks.update(GetLinks(url, html))
+#         for l in (GetLinks(url, html)): templinks.update({"url": l})
+#         # templinks.update(GetAllURLsParams(url))
+#         for l in (GetAllURLsParams(url)): templinks.update({"url": l})
+#         linksfollowed.update({"url": url})
+#         newlinks.update({"url": url})
+#         print("URL", url)
+#     bar = progressbar.progressbar("count", "Get URLs")
+#     while templinks:
+#         bar.progress(len(templinks))
+#         for link in templinks:
+#             try:
+#                 html = GetHTML(link)
+#                 links.update({link: html})
+#                 for l in (GetLinks(link, html)): newlinks.update({"link": l})
+#             except Exception as e:
+#                 pass
+#             newlinks.update(GetAllURLsParams(link))
+#             linksfollowed.update({link})
+#         templinks = newlinks.difference(linksfollowed)
+#     bar.delbar()
+#
+#     result = {}
+#     for link in links:
+#         if not CheckBlackListURLs(link):
+#             result.update({link: links[link]})
+#     print("RESULT", result)
+#     return result
 
 
 def CheckValidProof(html):
@@ -439,7 +448,6 @@ def CheckPageListAllVulns(pageset):
 
 
 def CheckFilePerm(filename, data):
-    data = data
     MAIN_DIR: Final[pathlib.Path] = pathlib.Path(__file__).parent
     output_json: str = MAIN_DIR / filename
     with open(output_json, "w") as jf:
