@@ -49,24 +49,11 @@ def main():
     if not options.url and not options.urllist:
         parser.print_help()
         exit(0)
-    elif options.url and validators.url(options.url):
-        url = [options.url]
-    elif options.urllist:
-        text_file = open(options.urllist, "r")
-        url = text_file.read().split('\n')
-        url = filter(partial(is_not, ""), url)
-        for infile in url:
-            if not validators.url(infile):
-                function.PrintError("-u " + infile, "Malformed URL. Please given a valid URL")
-                data = {}
-    else:
-        function.PrintError("-u " + options.url, "Malformed URL. Please given a valid URL")
-        data = {}
 
     # Check verbose args
     function.verbose = options.verbose
 
-    # Check Banned URLs
+    # Check Banned URLs / Ignore URLs
     if options.iurl:
         for bannedurl in options.iurl:
             if validators.url(bannedurl):
@@ -74,7 +61,6 @@ def main():
             else:
                 function.PrintError("-i " + bannedurl, "Malformed URL. Please given a valid URL")
                 data = {}
-
 
     # Cookies
     if options.cookies:
@@ -92,6 +78,9 @@ def main():
     if options.quick:
         config.scantype = "quick"
 
+    if options.url and validators.url(options.url):
+        url = [options.url]
+
     # init config
     config.init()
 
@@ -105,22 +94,25 @@ def main():
 
     if options.recursive:
         baseurl = []
-        for uniturl in url:
-            if uniturl[-1:] != "/" and os.path.splitext(urlparse.urlparse(uniturl).path)[1] == "":
-                uniturl = uniturl + "/"
-            baseurl.append(uniturl)
-            print("Base URL = " + uniturl)
-        pageset = function.GetAllPages(baseurl)
+        for unit_url in url:
+            if unit_url[-1:] != "/" and os.path.splitext(urlparse.urlparse(unit_url).path)[1] == "":
+                unit_url = unit_url + "/"
+            baseurl.append(unit_url)
+            print("Base URL = " + unit_url)
+        if len(baseurl) > 0:
+            page_set = function.GetAllPages(baseurl)
+        else:
+            page_set = {}
         data_list = []
-        for key, value in pageset.items():
+        for key, value in page_set.items():
             data = {"URL": key}
             data_list.append(data)
-        print(str(len(pageset)) + " URLs founds")
-        if pageset == {}:
+        print(str(len(page_set)) + " URLs founds")
+        if page_set == {}:
             data_list = {
                   "Error": "Nothing found in ScanQli"
                 }
-        if str(len(pageset)) == "0":
+        if str(len(page_set)) == "0":
             data_list = {
                   "Error": "Nothing found in ScanQli"
                 }
