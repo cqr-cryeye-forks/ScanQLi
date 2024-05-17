@@ -30,14 +30,11 @@ def main():
     groupoutput = optparse.OptionGroup(parser, "Output")
 
     groupscan.add_option('-u', "--url", action="store", dest="url", help="URL to scan", default=None)
-    groupscan.add_option('-U', "--urllist", action="store", metavar="file", dest="urllist", help="URL list to scan (one line by url)", default=None)
-    groupscan.add_option('-i', "--ignore", action="append", metavar="url", dest="iurl", help="Ignore given URLs during scan", default=None)
-    groupscan.add_option('-I', "--ignorelist", action="store", metavar="file", dest="iurllist", help="Ignore given URLs list (one line by url)", default=None)
     groupscan.add_option('-c', "--cookies", action="store", metavar="cookies", dest="cookies", help="Scan with given cookies", default=None, type=str)
     groupscan.add_option('-s', "--nosslcheck", action="store_true", dest="nosslcheck", help="Don't verify SSL certs")
     groupscan.add_option('-q', "--quick", action="store_true", dest="quick", help="Check only very basic vulns", default=None)
     groupscan.add_option('-r', "--recursive", action="store_true", dest="recursive", help="Recursive URL scan (will follow each href)", default=False)
-    groupscan.add_option('-w', "--wait", action="store", metavar="seconds", dest="waittime", help="Wait time between each request", default=None, type=str)
+    groupscan.add_option('-w', "--wait", action="store", metavar="seconds", dest="waittime", help="Wait time between each request", default=None, type=float)
     groupoutput.add_option('-v', "--verbose", action="store_true", dest="verbose", help="Display all tested URLs", default=False)
     groupoutput.add_option('-o', "--output", action="store", metavar="file", dest="output", help="Write outputs in file", default=None)
     parser.add_option_group(groupscan)
@@ -52,15 +49,6 @@ def main():
 
     # Check verbose args
     function.verbose = options.verbose
-
-    # Check Banned URLs / Ignore URLs
-    if options.iurl:
-        for bannedurl in options.iurl:
-            if validators.url(bannedurl):
-                config.BannedURLs.append(bannedurl)
-            else:
-                function.PrintError("-i " + bannedurl, "Malformed URL. Please given a valid URL")
-                data = {}
 
     # Cookies
     if options.cookies:
@@ -99,8 +87,12 @@ def main():
                 unit_url = unit_url + "/"
             baseurl.append(unit_url)
             print("Base URL = " + unit_url)
+
         if len(baseurl) > 0:
-            page_set = function.GetAllPages(baseurl)
+            try:
+                page_set = function.GetAllPages(baseurl)
+            except TypeError as e:
+                page_set = {}
         else:
             page_set = {}
         data_list = []
